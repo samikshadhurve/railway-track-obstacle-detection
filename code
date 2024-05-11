@@ -1,0 +1,61 @@
+import cv2
+
+cap = cv2.VideoCapture(1)
+overlay_img = cv2.imread(r"C:\Users\hp\Downloads\Untitled design.jpg")
+
+# Set the width property to 640
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+
+# Set the height property to 480
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
+def bresenhem_line(x0, y0, x1, y1):
+    del_x = x1 - x0
+    del_y = y1 - y0
+    parameter = (2 * del_y - del_x)
+    points = []
+
+    for i in range(del_x):
+        points.append((x0, y0))
+        if parameter < 0:
+            x0 = x0 + 1
+            parameter = parameter + (2 * del_y)
+        else:
+            x0 = x0 + 1
+            y0 = y0 + 1
+            parameter = parameter + (2 * del_y) - (2 * del_x)
+    return points
+
+while True:
+    success, frame = cap.read()
+
+    mask = cv2.resize(overlay_img, (frame.shape[1], frame.shape[0]))
+    imgregion = cv2.bitwise_and(frame, mask)
+    gray_image = cv2.cvtColor(imgregion, cv2.COLOR_BGR2GRAY)
+    white_threshold = 50  # Adjust this threshold as needed
+    _, binary_rail = cv2.threshold(gray_image, white_threshold, 255, cv2.THRESH_BINARY)  # Fixed line
+
+    binary_with_line = cv2.cvtColor(binary_rail, cv2.COLOR_GRAY2BGR)
+    cv2.line(binary_with_line, (235, 200), (395, 200), (0, 255, 0), 2)  # Draw a green line for visualization
+
+    # Get line coordinates
+    x1, y1, x2, y2 = 235, 200, 395, 200
+
+    # Iterate over the line and check for black spots
+    line_points = bresenhem_line(x1, y1, x2, y2)
+    for x, y in line_points:
+        if binary_rail[y, x] == 0:
+            print("obstacle detected!!!!!!!!!!!!!!")
+            print("obstacle detected at ({}, {})".format(x, y))
+            cv2.line(binary_with_line, (235, 200), (395, 200), (0, 0, 255), 2)
+
+    cv2.imshow('Overlay', gray_image)
+    cv2.imshow('binary', binary_with_line)
+
+    key = cv2.waitKey(1) & 0XFF
+    if key == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+
